@@ -119,11 +119,11 @@ ok("next none eligible -> null", L.nextTarget(L.EDIT_ORDER, "a", () => false) ==
   ok("solve honors edge lock a=6", close(s2.a, 6, 1e-3), `a=${s2.a}`);
 }
 
-// ---- hub navigation: data + ToolNav in both modes (menu path exercised before trig exists) ----
+// ---- hub navigation: data + ToolNav in all three modes (none / one sibling / menu) ----
 {
   const T = L.BUDDY_TOOLS, ids = T.map((t) => t.id);
   ok("BUDDY_TOOLS ids unique", new Set(ids).size === ids.length);
-  ok("BUDDY_TOOLS has triangle + fractions", ids.includes("triangle") && ids.includes("fractions"));
+  ok("BUDDY_TOOLS = triangle, fractions, trig", ids.join() === "triangle,fractions,trig", ids.join());
   ok("BUDDY_TOOLS urls are https roots", T.every((t) => /^https:\/\/[a-z0-9.-]+\/$/.test(t.url)));
 }
 (async () => {
@@ -134,15 +134,14 @@ ok("next none eligible -> null", L.nextTarget(L.EDIT_ORDER, "a", () => false) ==
   const tick = () => new Promise((r) => setTimeout(r, 20));
   const doc = dom.window.document, root = createRoot(doc.getElementById("r"));
   const mount = async (tools) => { root.render(React.createElement(L.ToolNav, { tools, currentId: "triangle" })); await tick(); };
-  const three = [...L.BUDDY_TOOLS, { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Trig" }];
   const down = (el) => el.dispatchEvent(new dom.window.MouseEvent("pointerdown", { bubbles: true }));
 
   await mount([L.BUDDY_TOOLS[0]]);
   ok("ToolNav: no siblings renders nothing", doc.getElementById("r").innerHTML === "");
-  await mount(L.BUDDY_TOOLS);
+  await mount(L.BUDDY_TOOLS.slice(0, 2));
   const a = doc.querySelector("a.tc-nav-link");
   ok("ToolNav: one sibling = direct link", !!a && a.href === "https://fractions.trianglebuddy.com/" && !doc.querySelector(".tc-nav-btn"));
-  await mount(three);
+  await mount(L.BUDDY_TOOLS);
   const btn = doc.querySelector(".tc-nav-btn");
   ok("ToolNav: two+ siblings = closed menu button", !!btn && !doc.querySelector(".tc-nav-menu") && btn.getAttribute("aria-expanded") === "false");
   btn.click(); await tick();

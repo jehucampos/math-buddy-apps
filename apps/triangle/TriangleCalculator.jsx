@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useMemo, useEffect, useLayoutEffe
 import { Lock, Unlock, Pin, PinOff, RotateCcw, Grid3x3, Magnet, Ruler, Move, Hand, Undo2, Redo2, MoveHorizontal, RotateCw } from "lucide-react";
 
 /* ============================================================
-   TRIANGLE BUDDY  v1.17.0
+   TRIANGLE BUDDY  v1.18.0
    ------------------------------------------------------------
    NAVIGATION MAP (search these tags to jump to a section):
      [SEC:CORE]    pure logic — mirrors core/logic.js verbatim.
@@ -188,6 +188,19 @@ import { Lock, Unlock, Pin, PinOff, RotateCcw, Grid3x3, Magnet, Ruler, Move, Han
          user first touches the view (the first measure ran before the
          layout settled, clipping a rotate icon); desktop popover 280 px
          with a 14 px title so it no longer wraps.
+   v1.18.0 Trig Buddy (trig.trianglebuddy.com) joins BUDDY_TOOLS, so the
+         header ToolNav is now the "More tools" menu listing all three
+         tools. Trig and Fraction Buddy carry the same list and menu.
+         Menu z-index 60 -> 10000 so it opens above the Buy Me a Coffee
+         welcome bubble (9999; first visit, 8 s), which covered the
+         menu's last item on a landscape phone (Trig browser gate).
+         The menu anchors to .tc-head-end (the header's right edge),
+         not the button: anchored to the button it hung 16 px off the
+         left edge of a 320 px screen (Fraction layout gate).
+         Menu button (aria-label "More tools") reads "Tools ▾"; at
+         <= 600 px it is a 44x44 four-square icon, so Trig and Fraction
+         keep it on their title row on phones.
+         Crawlable footer links both sister tools.
    ============================================================ */
 
 // ===================== [SEC:CORE] =====================
@@ -636,6 +649,7 @@ function solve(points, locks, dragging, iterations = 80) {
 const BUDDY_TOOLS = [
   { id: "triangle", name: "Triangle Buddy", url: "https://trianglebuddy.com/", blurb: "Sides, angles & missing values" },
   { id: "fractions", name: "Fraction Buddy", url: "https://fractions.trianglebuddy.com/", blurb: "Add, subtract, multiply & divide fractions" },
+  { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Unit circle, exact values & inverse trig" },
 ];
 function ToolNav({ tools, currentId }) {
   const others = tools.filter((t) => t.id !== currentId);
@@ -656,8 +670,9 @@ function ToolNav({ tools, currentId }) {
   }
   return (
     <div className="tc-nav" ref={ref}>
-      <button type="button" className="tc-nav-link tc-nav-btn" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        More tools <span aria-hidden="true">{"\u25BE"}</span>
+      <button type="button" className="tc-nav-link tc-nav-btn" aria-label="More tools" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <svg className="tc-nav-ico" width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true" focusable="false"><rect x="1" y="1" width="6.5" height="6.5" rx="1.5" /><rect x="10.5" y="1" width="6.5" height="6.5" rx="1.5" /><rect x="1" y="10.5" width="6.5" height="6.5" rx="1.5" /><rect x="10.5" y="10.5" width="6.5" height="6.5" rx="1.5" /></svg>
+        <span className="tc-nav-txt">Tools <span aria-hidden="true">{"\u25BE"}</span></span>
       </button>
       {open && (
         <div className="tc-nav-menu" role="menu">
@@ -1500,12 +1515,13 @@ export default function TriangleCalculator() {
         .tc-title{font-family:${FONT_DISP};font-weight:600;margin:0;letter-spacing:-0.5px;}
         .tc-subtitle{color:${C.dim};font-size:12px;letter-spacing:1px;}
         .tc-version{color:${C.dim};font-size:11px;}
-        .tc-head-end{margin-left:auto;display:flex;align-items:center;gap:12px}
-        .tc-nav{position:relative}
+        .tc-head-end{margin-left:auto;display:flex;align-items:center;gap:12px;position:relative} /* anchors .tc-nav-menu to the header edge */
         .tc-nav-link{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 12px;border-radius:999px;border:1px solid ${C.line};background:${C.panel};color:${C.brass};font-family:${FONT_MONO};font-size:12px;text-decoration:none;cursor:pointer;white-space:nowrap;box-sizing:border-box}
         .tc-nav-link:hover,.tc-nav-link:focus-visible{border-color:${C.brass};outline:none}
         @media (pointer: coarse){ .tc-nav-link{min-height:44px;font-size:13px;padding:4px 14px} }
-        .tc-nav-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:260px;padding:6px;border-radius:12px;background:${C.panel2};border:1px solid ${C.line};box-shadow:0 16px 36px -10px #000}
+        .tc-nav-ico{display:none}
+        @media (max-width:600px){ .tc-nav-btn{width:44px;min-height:44px;padding:0;justify-content:center} .tc-nav-txt{display:none} .tc-nav-ico{display:block} }
+        .tc-nav-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:10000;min-width:260px;padding:6px;border-radius:12px;background:${C.panel2};border:1px solid ${C.line};box-shadow:0 16px 36px -10px #000}
         .tc-nav-item{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:48px;padding:8px 12px;border-radius:8px;box-sizing:border-box;text-decoration:none;color:${C.ink}}
         .tc-nav-item b{font-family:${FONT_DISP};font-weight:600;font-size:15px}
         .tc-nav-item small{font-family:${FONT_MONO};font-size:11px;color:${C.dim}}
@@ -1614,7 +1630,7 @@ export default function TriangleCalculator() {
           <span className="tc-subtitle">INTERACTIVE GEOMETRY · {system === "imperial" ? `IMPERIAL 1/${denom}"` : `METRIC ${decimals}dp`} · {UNIT_LABEL[unit].toUpperCase()}</span>
           <div className="tc-head-end">
             <ToolNav tools={BUDDY_TOOLS} currentId="triangle" />
-            <span className="tc-version">v1.17.0</span>
+            <span className="tc-version">v1.18.0</span>
           </div>
         </div>
         <div className="tc-rule" />

@@ -218,6 +218,14 @@ Single source of truth for the tool family, with trianglebuddy.com as the hub an
 **Adding a tool (e.g. trig.trianglebuddy.com):** add one entry to `BUDDY_TOOLS`, and add a crawlable footer line to `core/template.html`. The header switches to the menu automatically.
 **Reuse in other Buddy apps:** copy the section and pass that app's `currentId` (e.g. `"fractions"`) so every tool shows the same family navigation.
 
+**Updated in Triangle v1.18.0 · Trig v0.2.0 · Fraction v1.3.0: `ToolNav` in all three headers**
+All three apps now carry an identical copy of `BUDDY_TOOLS` (triangle, fractions, trig) plus `ToolNav`, with only the class prefix changed (`tc-` / `tg-` / `fb-`) and `currentId` set to the app. With three tools, each header shows the menu.
+- **Button:** `aria-label="More tools"`, visible text "Tools ▾". At `max-width:600px` it turns into a 44x44 four-square SVG icon (`.xx-nav-ico` shown, `.xx-nav-txt` hidden). Measured in Chromium, the text button pushed the Trig and Fraction phone headers down a row (+50 / +58 px). With the icon they cost +10 px (Fraction 360–414 px, Trig 390–414 px). At 320 px (both apps) and at 360–375 px (Trig), the header still takes an extra row.
+- **Anchor:** the menu is positioned against the header's right-hand cluster (`.tc-head-end` / `.tg-hdr-right` / `.fb-head-end`, which is `position:relative`), not against the button. When it hung off the button, a 274 px menu started 16 px off-screen at 320 px width.
+- **Stacking:** `z-index:10000` puts the menu above the Buy Me a Coffee widget (button and welcome bubble at 9999; the bubble shows 0.5–8 s after a first visit) and below Trig's editor layers (10000–10002; the editor comes later in the DOM, so it wins the tie).
+- **Gates:** unit tests for all three modes (Triangle and Trig `core/test-core.js`, Fraction `core/interaction-test.js`) and built-page menu checks (Triangle `interaction-test`, Trig and Fraction `verify-built-html`). Real-browser layout checks cover button placement and size, the menu fully on screen and on top, and closing (Trig `browser-test.js`, Fraction `layout-check.py`, both `--full`). Triangle has no real-browser gate.
+**Adding a tool now:** add the same entry to `BUDDY_TOOLS` in every app and a footer line to every app's `core/template.html`, then update each app's nav tests (they assert the exact list).
+
 **Fit until touched** · `[SEC:COMPONENT]`
 `viewTouchedRef`: until the user's first pointer-down on the canvas, a wheel zoom, or a zoom button, every resize refits the triangle, because the first measurement can run before the layout settles. After that, resizes preserve the user's view. Reset clears the flag.
 

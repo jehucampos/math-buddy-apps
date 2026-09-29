@@ -30,6 +30,7 @@ ok(html.includes('<link rel="canonical" href="https://fractions.trianglebuddy.co
 ok(html.includes('content="https://fractions.trianglebuddy.com/og-image.png"'), "og:image on the new host");
 ok(!html.includes("fractionbuddy.com"), "no stale fractionbuddy.com references");
 ok(/<footer[\s\S]*href="https:\/\/trianglebuddy\.com\/"[\s\S]*<\/footer>/.test(html), "crawlable footer links back to trianglebuddy.com");
+ok(/<footer[\s\S]*href="https:\/\/trig\.trianglebuddy\.com\/"[\s\S]*<\/footer>/.test(html), "crawlable footer links to trig.trianglebuddy.com");
 ok(html.includes("createRoot"), "mount tail present in bundle");
 ok(/<script>[\s\S]{1000,}<\/script>/.test(html), "inlined bundle script present");
 // Self-contained: the ONLY external script is the BMC widget companion.
@@ -54,8 +55,10 @@ dom.window.matchMedia = dom.window.matchMedia || function (q) {
 };
 
 (async () => {
-  // Let React 18 flush its async commit (scheduler uses timers/microtasks).
-  for (let i = 0; i < 5; i++) { await new Promise(r => setTimeout(r, 20)); }
+  // Wait for React 18's async commit: poll for the result marker (5 s cap) instead
+  // of a fixed sleep, then settle so post-mount effects apply.
+  for (const t0 = Date.now(); !dom.window.document.querySelector(".fb-result-main") && Date.now() - t0 < 5000; ) await new Promise(r => setTimeout(r, 10));
+  await new Promise(r => setTimeout(r, 60));
 
   ok(jsErrors.length === 0, "no JS errors during boot" + (jsErrors.length ? " -> " + jsErrors.join(" | ") : ""));
 
@@ -80,6 +83,18 @@ dom.window.matchMedia = dom.window.matchMedia || function (q) {
   ok(allNumeric, "every value input has inputmode=numeric + pattern=[0-9]* (numeric keypad)");
   ok(doc.querySelectorAll(".fb-ops .fb-opbtn").length === 4, "one 4-button operator picker between the 2 default rows");
   ok(!!doc.querySelector('.fb-app a.fb-family[href="https://trianglebuddy.com/"]'), "in-app link back to trianglebuddy.com");
+  // v1.3.0 header family menu in the shipped file: closed button; open lists all three.
+  const navBtn = doc.querySelector(".fb-head-end button.fb-nav-btn");
+  ok(navBtn && navBtn.getAttribute("aria-label") === "More tools" && /Tools/.test(navBtn.textContent) && !!navBtn.querySelector("svg.fb-nav-ico") && navBtn.getAttribute("aria-expanded") === "false" && !doc.querySelector(".fb-nav-menu"), "header has a closed More tools menu");
+  if (navBtn) {
+    navBtn.click();
+    for (const t0 = Date.now(); !doc.querySelector(".fb-nav-menu") && Date.now() - t0 < 2000; ) await new Promise(r => setTimeout(r, 10));
+    const items = [...doc.querySelectorAll(".fb-nav-menu .fb-nav-item")];
+    ok(items.length === 3 && items[0].href === "https://trianglebuddy.com/" && items[2].href === "https://trig.trianglebuddy.com/"
+       && items[1].tagName === "SPAN" && items[1].getAttribute("aria-current") === "page" && /Fraction Buddy/.test(items[1].textContent),
+       "menu lists Triangle, Fraction (current), Trig: " + items.map(i => i.outerHTML).join(" | "));
+  }
+  ok((doc.querySelector(".fb-version") || {}).textContent === "v" + require("../package.json").version, "version label matches package.json");
   // v1.1.0 regression: result fraction must NOT inherit the input column's fixed width.
   const sf = main && main.querySelector(".fb-sfrac");
   ok(sf && dom.window.getComputedStyle(sf).width !== "64px", "result fraction not forced to the input column's 64px width");

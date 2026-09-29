@@ -73,19 +73,35 @@ async function boot(phone) {
       }
     },
   });
-  await tick(150);
-  return { doc: dom.window.document, errors };
+  // Wait for mount (six function tiles, 5 s cap) instead of a fixed sleep, then settle.
+  const doc = dom.window.document;
+  for (const t0 = Date.now(); doc.querySelectorAll(".tg-tile").length < 6 && Date.now() - t0 < 5000; ) await tick(10);
+  await tick(120);
+  return { win: dom.window, doc, errors };
 }
 (async () => {
   for (const phone of [true, false]) {
     const tag = phone ? "phone" : "desktop";
-    const { doc, errors } = await boot(phone);
+    const { win, doc, errors } = await boot(phone);
     ok(`${tag}: mounted`, !!doc.querySelector("#root .tg-root"));
     ok(`${tag}: version label ${VERSION}`, (doc.querySelector(".tg-version") || {}).textContent === VERSION);
     ok(`${tag}: title Trig·Buddy`, (doc.querySelector(".tg-title") || {}).textContent === "Trig·Buddy");
     ok(`${tag}: canvas svg rendered`, !!doc.querySelector("svg.tg-svg circle.tg-ring"));
     ok(`${tag}: six function tiles`, doc.querySelectorAll(".tg-tile").length === 6);
     ok(`${tag}: sin 30° shows exact 1/2`, /1\s*2/.test((doc.querySelector('.tg-tile[data-fn="sin"] .tg-tile-main') || {}).textContent || ""));
+    // header family menu: closed button; open lists Triangle, Fraction (links) and Trig (current)
+    const btn = doc.querySelector(".tg-hdr-right button.tg-nav-btn");
+    ok(`${tag}: header has closed More tools menu`, !!btn && btn.getAttribute("aria-label") === "More tools" && btn.textContent.includes("Tools") && !!btn.querySelector("svg.tg-nav-ico") && btn.getAttribute("aria-expanded") === "false" && !doc.querySelector(".tg-nav-menu"));
+    if (btn) {
+      btn.click(); await tick();
+      const items = [...doc.querySelectorAll(".tg-nav-menu .tg-nav-item")];
+      ok(`${tag}: menu lists Triangle, Fraction, Trig (current)`,
+        items.length === 3 && items[0].href === "https://trianglebuddy.com/" && items[1].href === "https://fractions.trianglebuddy.com/"
+        && items[2].tagName === "SPAN" && items[2].getAttribute("aria-current") === "page" && items[2].textContent.includes("Trig Buddy"),
+        items.map((i) => i.outerHTML).join(" | "));
+      doc.dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); await tick();
+      ok(`${tag}: Esc closes the menu`, !doc.querySelector(".tg-nav-menu") && btn.getAttribute("aria-expanded") === "false");
+    }
     ok(`${tag}: no runtime errors`, errors.length === 0, errors.join(" | "));
   }
   console.log(`VERIFY BUILT HTML: ${pass} passed, ${fail} failed`);
