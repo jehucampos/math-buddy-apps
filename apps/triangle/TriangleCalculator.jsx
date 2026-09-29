@@ -198,8 +198,13 @@ import { Lock, Unlock, Pin, PinOff, RotateCcw, Grid3x3, Magnet, Ruler, Move, Han
          not the button: anchored to the button it hung 16 px off the
          left edge of a 320 px screen (Fraction layout gate).
          Menu button (aria-label "More tools") reads "Tools ▾"; at
-         <= 600 px it is a 44x44 four-square icon, so Trig and Fraction
-         keep it on their title row on phones.
+         <= 600 px it is a 44x44 four-square icon.
+         Phones (<= 600 px): the header drops a row (134 -> 70 px at
+         390 px): the version moves to a line at the bottom of the app
+         ("Triangle Buddy v1.18.0", just above the info/FAQ section),
+         the icon joins the title row and the subtitle takes its own
+         row at 10.5 px (one line from 390 px up). VERSION const now
+         feeds both labels.
          Crawlable footer links both sister tools.
    ============================================================ */
 
@@ -649,7 +654,7 @@ function solve(points, locks, dragging, iterations = 80) {
 const BUDDY_TOOLS = [
   { id: "triangle", name: "Triangle Buddy", url: "https://trianglebuddy.com/", blurb: "Sides, angles & missing values" },
   { id: "fractions", name: "Fraction Buddy", url: "https://fractions.trianglebuddy.com/", blurb: "Add, subtract, multiply & divide fractions" },
-  { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Unit circle, exact values & inverse trig" },
+  { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Unit circle, exact values & graphs" },
 ];
 function ToolNav({ tools, currentId }) {
   const others = tools.filter((t) => t.id !== currentId);
@@ -699,6 +704,7 @@ const C = {
 };
 const FONT_MONO = "'JetBrains Mono', ui-monospace, monospace";
 const FONT_DISP = "'Fraunces', Georgia, serif";
+const VERSION = "v1.18.0";   // header label (tablet/desktop) + phone footer line
 const DENOMS = [2, 4, 8, 16, 32, 64];
 const W0 = 640, H0 = 560, MARGIN = 28; // pre-measure / server-render viewBox; live size is vbW x vbH in CSS px (1:1)
 const TAP_PX = 6;   // a press travelling <= this many CSS px is a tap, not a drag
@@ -1521,6 +1527,8 @@ export default function TriangleCalculator() {
         @media (pointer: coarse){ .tc-nav-link{min-height:44px;font-size:13px;padding:4px 14px} }
         .tc-nav-ico{display:none}
         @media (max-width:600px){ .tc-nav-btn{width:44px;min-height:44px;padding:0;justify-content:center} .tc-nav-txt{display:none} .tc-nav-ico{display:block} }
+        .tc-version-foot{display:none}
+        @media (max-width:600px){ .tc-version{display:none} .tc-version-foot{display:block;margin:16px 0 0;text-align:center;color:${C.dim};font-size:11px;letter-spacing:0.5px} .tc-header{align-items:center} .tc-subtitle{order:3;width:100%;font-size:10.5px} }
         .tc-nav-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:10000;min-width:260px;padding:6px;border-radius:12px;background:${C.panel2};border:1px solid ${C.line};box-shadow:0 16px 36px -10px #000}
         .tc-nav-item{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:48px;padding:8px 12px;border-radius:8px;box-sizing:border-box;text-decoration:none;color:${C.ink}}
         .tc-nav-item b{font-family:${FONT_DISP};font-weight:600;font-size:15px}
@@ -1630,7 +1638,7 @@ export default function TriangleCalculator() {
           <span className="tc-subtitle">INTERACTIVE GEOMETRY · {system === "imperial" ? `IMPERIAL 1/${denom}"` : `METRIC ${decimals}dp`} · {UNIT_LABEL[unit].toUpperCase()}</span>
           <div className="tc-head-end">
             <ToolNav tools={BUDDY_TOOLS} currentId="triangle" />
-            <span className="tc-version">v1.18.0</span>
+            <span className="tc-version">{VERSION}</span>
           </div>
         </div>
         <div className="tc-rule" />
@@ -1978,6 +1986,7 @@ export default function TriangleCalculator() {
             </Section>
           </div>
         </div>
+        <div className="tc-version-foot">Triangle Buddy {VERSION}</div>
       </div>
     </div>
   );

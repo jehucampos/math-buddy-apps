@@ -14,7 +14,8 @@ here in real Chromium with touch emulation (=> pointer: coarse):
     spaced on phones (<=480px)
   * header "More tools" menu (v1.3.0): button in the viewport, clear of the
     title/subtitle/version, >= 44px on touch; icon-only 44x44 at <= 600px and
-    "Tools" text wider; on the title row from 360px up; open menu fully on
+    "Tools" text wider; on the title row from 320px up; at <= 600px the version
+    moves from the header to a line above the link-back strip; open menu fully on
     screen and on top of the page (above the BMC welcome bubble and sticky result)
   * zero page errors
 Run: python3 core/layout-check.py   (exit 0 = pass, 2 = no browser: skipped)
@@ -114,7 +115,8 @@ async def main():
           const others=['.fb-title','.fb-subtitle','.fb-version'].filter(s=>hit(btn,bx(document.querySelector(s))));
           const cs=s=>getComputedStyle(document.querySelector(s)).display!=='none';
           return {btn, others, vw:innerWidth, head:bx(document.querySelector('.fb-header')).h, title:bx(document.querySelector('.fb-title')),
-            ico:cs('.fb-nav-ico'), txt:cs('.fb-nav-txt')}})()"""
+            ico:cs('.fb-nav-ico'), txt:cs('.fb-nav-txt'), headVer:cs('.fb-version'), footVer:cs('.fb-version-foot'),
+            footOrder:(()=>{const f=document.querySelector('.fb-version-foot').getBoundingClientRect(),a=document.querySelector('.fb-footer').getBoundingClientRect(),l=document.querySelector('.fb-family').getBoundingClientRect();return f.top>=a.bottom-0.5&&f.bottom<=l.top+0.5})()}})()"""
         menu_js = """(()=>{const m=document.querySelector('.fb-nav-menu');if(!m)return null;const r=m.getBoundingClientRect();
           const top=[...m.querySelectorAll('.fb-nav-item')].map(e=>{const q=e.getBoundingClientRect();const x=document.elementFromPoint(q.left+q.width/2,q.top+q.height/2);return !!x&&e.contains(x)});
           return {l:r.left,r:r.right,b:r.bottom,vw:innerWidth,vh:innerHeight,top}})()"""
@@ -133,7 +135,11 @@ async def main():
                 ok(n["ico"] and not n["txt"] and round(bw) == 44 and round(n["btn"]["h"]) == 44, f"{tag}: icon-only 44x44 button (ico {n['ico']} txt {n['txt']} {round(bw)}x{round(n['btn']['h'])})")
             else:
                 ok(n["txt"] and not n["ico"], f"{tag}: 'Tools' label on wide screens (ico {n['ico']} txt {n['txt']})")
-            if n["vw"] >= 360:
+            if n["vw"] <= 600:
+                ok(not n["headVer"] and n["footVer"] and n["footOrder"], f"{tag}: version line at the bottom of the app, above the link (head {n['headVer']} foot {n['footVer']} order {n['footOrder']})")
+            else:
+                ok(n["headVer"] and not n["footVer"], f"{tag}: version stays in the header (head {n['headVer']} foot {n['footVer']})")
+            if n["vw"] >= 320:
                 ok(n["btn"]["t"] < n["title"]["b"] and n["btn"]["b"] > n["title"]["t"], f"{tag}: button shares the title row (btn {n['btn']} title {n['title']})")
             await (p.locator(".fb-nav-btn").tap() if mob else p.locator(".fb-nav-btn").click())
             await p.wait_for_timeout(80)

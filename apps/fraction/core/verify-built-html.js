@@ -95,6 +95,9 @@ dom.window.matchMedia = dom.window.matchMedia || function (q) {
        "menu lists Triangle, Fraction (current), Trig: " + items.map(i => i.outerHTML).join(" | "));
   }
   ok((doc.querySelector(".fb-version") || {}).textContent === "v" + require("../package.json").version, "version label matches package.json");
+  const vf = doc.querySelector(".fb-app > .fb-version-foot");
+  ok(vf && vf.textContent === "Fraction Buddy v" + require("../package.json").version && vf.nextElementSibling === doc.querySelector(".fb-app > a.fb-family"),
+     "bottom version line sits just above the trianglebuddy.com link");
   // v1.1.0 regression: result fraction must NOT inherit the input column's fixed width.
   const sf = main && main.querySelector(".fb-sfrac");
   ok(sf && dom.window.getComputedStyle(sf).width !== "64px", "result fraction not forced to the input column's 64px width");

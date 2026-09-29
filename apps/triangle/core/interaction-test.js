@@ -71,6 +71,7 @@ async function checkNav(A, tag) {
   ok("phone: idle status", P.status() === "Tap a value to set it", P.status());
   await checkNav(P, "phone");
   ok("phone: version label v1.18.0", (P.$(".tc-version") || {}).textContent === "v1.18.0");
+  ok("phone: bottom version line", (P.$(".tc-app > .tc-version-foot") || {}).textContent === "Triangle Buddy v1.18.0");
   ok("phone: detail panels collapsed", !!P.$(".tc-details") && !P.all(".tc-section-title").some((e) => e.textContent === "Sides"));
   await P.click(".tc-details");
   ok("phone: Details expands Sides panel", P.all(".tc-section-title").some((e) => e.textContent === "Sides"));
@@ -130,6 +131,7 @@ async function checkNav(A, tag) {
   const D = await boot(false);
   await checkNav(D, "desktop");
   ok("desktop: version label v1.18.0", (D.$(".tc-version") || {}).textContent === "v1.18.0");
+  ok("desktop: bottom version line present (CSS shows it on phones only)", (D.$(".tc-app > .tc-version-foot") || {}).textContent === "Triangle Buddy v1.18.0");
   await D.tap(D.$('[data-ed="edge-a"]'));
   ok("desktop: popover with native input, no sheet", !!D.$(".tc-pop input.tc-ed-in") && !D.$(".tc-sheet"));
   const setVal = (el, v) => { Object.getOwnPropertyDescriptor(D.win.HTMLInputElement.prototype, "value").set.call(el, v); el.dispatchEvent(new D.win.Event("input", { bubbles: true })); };

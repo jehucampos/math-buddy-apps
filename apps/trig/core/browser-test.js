@@ -68,8 +68,9 @@ async function layoutChecks(page, tag) {
 }
 // header family menu in real layout: button inside the viewport, clear of the title /
 // DEG-RAD / version, 44 px tall on touch; open menu fully on screen and on top of the page.
-// <= 600 px: icon-only 44x44 button, on the title row from 390 px up (at 360-375 px the
-// title + DEG/RAD + icon + version need two rows, measured); wider: "Tools" text.
+// <= 600 px: icon-only 44x44 button, on the title row from 360 px up (320 px needs two
+// rows, measured); the version shows as a line at the bottom of the app instead of the
+// header. Wider: "Tools" text and the header version.
 async function navChecks(page, tag, touch) {
   const box = (sel) => page.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, h: r.height }; });
   const hit = (a, b) => a.l < b.r - 0.5 && b.l < a.r - 0.5 && a.t < b.b - 0.5 && b.t < a.b - 0.5;
@@ -84,8 +85,13 @@ async function navChecks(page, tag, touch) {
   if (vw <= 600) {
     ok(`${tag}: phone shows the icon-only 44x44 button`, mode.ico && !mode.txt && Math.round(mode.w) === 44 && Math.round(btn.h) === 44, JSON.stringify(mode));
     const t = others.title;
-    if (vw >= 390) ok(`${tag}: button shares the title row`, btn.t < t.b && btn.b > t.t, `btn ${btn.t}-${btn.b} title ${t.t}-${t.b}`);
+    if (vw >= 360) ok(`${tag}: button shares the title row`, btn.t < t.b && btn.b > t.t, `btn ${btn.t}-${btn.b} title ${t.t}-${t.b}`);
   } else ok(`${tag}: wide screens show the "Tools" label`, mode.txt && !mode.ico, JSON.stringify(mode));
+  const ver = await page.evaluate(() => { const shown = (s) => getComputedStyle(document.querySelector(s)).display !== "none";
+    const f = document.querySelector(".tg-version-foot").getBoundingClientRect(), c = document.querySelector(".tg-cols").getBoundingClientRect(), hr = document.querySelector("footer#about hr").getBoundingClientRect();
+    return { head: shown(".tg-version"), foot: shown(".tg-version-foot"), belowApp: f.top >= c.bottom - 0.5, aboveInfo: f.bottom <= hr.top + 0.5 }; });
+  if (vw <= 600) ok(`${tag}: version moves to the bottom of the app, above the info section`, !ver.head && ver.foot && ver.belowApp && ver.aboveInfo, JSON.stringify(ver));
+  else ok(`${tag}: version stays in the header`, ver.head && !ver.foot, JSON.stringify(ver));
   console.log(`INFO ${tag}: header ${Math.round((await box(".tg-header")).h)} px tall, button ${Math.round(btn.l)}–${Math.round(btn.r)} of ${vw}`);
   await (touch ? page.tap(".tg-nav-btn") : page.click(".tg-nav-btn"));
   await page.waitForTimeout(80);

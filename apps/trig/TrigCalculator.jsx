@@ -44,8 +44,11 @@ import React, { useState, useRef, useMemo, useEffect, useLayoutEffect } from "re
          welcome bubble (9999), below the editor sheet and popover.
          The menu anchors to .tg-hdr-right (the header's right edge)
          so it stays on screen at 320 px. Button (aria-label "More
-         tools") reads "Tools ▾"; at <= 600 px it is a 44x44 icon that
-         shares the title row from 390 px up.
+         tools") reads "Tools ▾"; at <= 600 px it is a 44x44 icon.
+         Phones (<= 600 px): the version moves from the header to a
+         line at the bottom of the app ("Trig Buddy v0.2.0", just above
+         the info/FAQ section), so title, DEG/RAD and the icon share
+         one row from 360 px up (header 62 px).
    ============================================================ */
 
 // ===================== [SEC:CORE] =====================
@@ -496,7 +499,7 @@ const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : use
 const BUDDY_TOOLS = [
   { id: "triangle", name: "Triangle Buddy", url: "https://trianglebuddy.com/", blurb: "Sides, angles & missing values" },
   { id: "fractions", name: "Fraction Buddy", url: "https://fractions.trianglebuddy.com/", blurb: "Add, subtract, multiply & divide fractions" },
-  { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Unit circle, exact values & inverse trig" },
+  { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Unit circle, exact values & graphs" },
 ];
 function ToolNav({ tools, currentId }) {
   const others = tools.filter((t) => t.id !== currentId);
@@ -1645,6 +1648,8 @@ export default function TrigCalculator({
         }
         .tg-nav-ico{display:none}
         @media (max-width:600px){ .tg-nav-btn{width:44px;min-height:44px;padding:0;justify-content:center} .tg-nav-txt{display:none} .tg-nav-ico{display:block} }
+        .tg-version-foot{display:none}
+        @media (max-width:600px){ .tg-version{display:none} .tg-version-foot{display:block;margin:16px 0 0;text-align:center;color:${C.dim};font-size:11px;letter-spacing:0.5px} }
         ::selection{background:${C.brass};color:${C.bg}}`}</style>
 
       <div className="tg-app" style={{ minHeight: fitMode ? 0 : "calc(100vh - 40px)" }}>
@@ -1722,6 +1727,7 @@ export default function TrigCalculator({
             {settingsPanel}
           </div>
         </div>
+        <div className="tg-version-foot">Trig Buddy {VERSION}</div>
       </div>
       {editor}
     </div>

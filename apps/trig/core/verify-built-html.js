@@ -85,6 +85,7 @@ async function boot(phone) {
     const { win, doc, errors } = await boot(phone);
     ok(`${tag}: mounted`, !!doc.querySelector("#root .tg-root"));
     ok(`${tag}: version label ${VERSION}`, (doc.querySelector(".tg-version") || {}).textContent === VERSION);
+    ok(`${tag}: bottom version line`, (doc.querySelector(".tg-app > .tg-version-foot") || {}).textContent === `Trig Buddy ${VERSION}`);
     ok(`${tag}: title Trig·Buddy`, (doc.querySelector(".tg-title") || {}).textContent === "Trig·Buddy");
     ok(`${tag}: canvas svg rendered`, !!doc.querySelector("svg.tg-svg circle.tg-ring"));
     ok(`${tag}: six function tiles`, doc.querySelectorAll(".tg-tile").length === 6);

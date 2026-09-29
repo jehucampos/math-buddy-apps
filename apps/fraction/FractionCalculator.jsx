@@ -49,8 +49,10 @@ import React, { useState, useRef, useMemo, useEffect, useCallback } from "react"
            The menu anchors to .fb-head-end (the header's right edge),
            not the button, so it stays on screen at 320 px. Button
            (aria-label "More tools") reads "Tools ▾"; at <= 600 px it is
-           a 44x44 icon and the subtitle takes its own row, so the icon
-           shares the title row from 360 px up.
+           a 44x44 icon and the subtitle takes its own row. Phones: the
+           version moves from the header to a line above the link to
+           trianglebuddy.com ("Fraction Buddy v1.3.0"), so the icon shares
+           the title row at every phone width (header 72 px).
            Crawlable footer now also links Trig Buddy. The in-app
            link to trianglebuddy.com stays.
    v1.2.4  phones (<=480px): row items (sign, whole, fraction,
@@ -369,7 +371,7 @@ const defaultTerms = () => [
 const BUDDY_TOOLS = [
   { id: "triangle", name: "Triangle Buddy", url: "https://trianglebuddy.com/", blurb: "Sides, angles & missing values" },
   { id: "fractions", name: "Fraction Buddy", url: "https://fractions.trianglebuddy.com/", blurb: "Add, subtract, multiply & divide fractions" },
-  { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Unit circle, exact values & inverse trig" },
+  { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Unit circle, exact values & graphs" },
 ];
 function ToolNav({ tools, currentId }) {
   const others = tools.filter((t) => t.id !== currentId);
@@ -652,6 +654,8 @@ function FractionCalculator() {
         .fb-nav-ico{display:none}
         @media (max-width:600px){ .fb-nav-btn{width:44px;min-height:44px;padding:0;justify-content:center} .fb-nav-txt{display:none} .fb-nav-ico{display:block} }
         @media (max-width:600px){ .fb-header{align-items:center;} .fb-subtitle{order:3;width:100%;} }
+        .fb-version-foot{display:none}
+        @media (max-width:600px){ .fb-version{display:none} .fb-version-foot{display:block;margin:16px 0 0;text-align:center;color:${C.dim};font-size:11px;letter-spacing:0.5px} }
         /* Phones: a centered group leaves the delete button crowded on the
            right, so spread all four row items with equal spacing instead.
            (display:contents lets the cluster's children join the row.) */
@@ -828,6 +832,7 @@ function FractionCalculator() {
           </span>
         </div>
 
+        <div className="fb-version-foot">Fraction Buddy {APP_VERSION}</div>
         <a className="fb-family" href={FAMILY_URL}>
           More free math &amp; geometry tools at <b>trianglebuddy.com</b>
         </a>
