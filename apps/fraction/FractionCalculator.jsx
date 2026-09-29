@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback } from "react";
 
 /* ============================================================
-   FRACTION BUDDY  v1.2.4
+   FRACTION BUDDY  v1.3.0
    ------------------------------------------------------------
    A small, free, self-contained tool: add, subtract, multiply
    and divide any number of [whole + fraction] terms (standard
@@ -17,6 +17,7 @@ import React, { useState, useRef, useMemo, useEffect, useCallback } from "react"
                     (97 asserts), then sync.
      [SEC:UI-CONST] UI-only constants (shared color/font tokens,
                     field caps). Artifact-only.
+     [SEC:UI-CONST/hub] BUDDY_TOOLS + ToolNav: family navigation.
      [SEC:COMPONENT] the React component (state, handlers,
                     platform detection, render).
      [SEC:PRESENT]  small presentational helpers (Section,
@@ -40,6 +41,20 @@ import React, { useState, useRef, useMemo, useEffect, useCallback } from "react"
                hover states on buttons.
 
    CHANGELOG:
+   v1.3.0  family navigation: BUDDY_TOOLS + ToolNav ([SEC:UI-CONST/hub]),
+           copied from Triangle Buddy. The header shows a "More tools"
+           menu (Triangle, Fraction, Trig; this tool marked current)
+           before the version. Menu z-index 10000 keeps it above the
+           Buy Me a Coffee welcome bubble (9999) and the sticky result.
+           The menu anchors to .fb-head-end (the header's right edge),
+           not the button, so it stays on screen at 320 px. Button
+           (aria-label "More tools") reads "Tools ▾"; at <= 600 px it is
+           a 44x44 icon and the subtitle takes its own row. Phones: the
+           version moves from the header to a line above the link to
+           trianglebuddy.com ("Fraction Buddy v1.3.0"), so the icon shares
+           the title row at every phone width (header 72 px).
+           Crawlable footer now also links Trig Buddy. The in-app
+           link to trianglebuddy.com stays.
    v1.2.4  phones (<=480px): row items (sign, whole, fraction,
            delete) are spread with equal spacing, since the centered
            group crowded the delete button; wider screens keep the
@@ -327,7 +342,7 @@ const C = {
 };
 const FONT_MONO = "'JetBrains Mono', ui-monospace, monospace";
 const FONT_DISP = "'Fraunces', Georgia, serif";
-const APP_VERSION = "v1.2.4";
+const APP_VERSION = "v1.3.0";
 const FAMILY_URL = "https://trianglebuddy.com/";
 const MAX_DIGITS = 6;        // per field; keeps products inside safe-integer range
 const NUDGE_MAX = 999999;    // arrow-key ceiling per field
@@ -348,6 +363,51 @@ const defaultTerms = () => [
   { id: newId(), op: "+", whole: "", num: "1", den: "2" },
   { id: newId(), op: "+", whole: "", num: "1", den: "4" },
 ];
+
+/* ===================== [SEC:UI-CONST/hub] Buddy tool family =====================
+   Copied from Triangle Buddy (COMPONENT-CATALOG "BUDDY_TOOLS + ToolNav"); only the
+   class prefix differs. Keep the list identical in all three apps. ToolNav renders a
+   direct link with one sibling tool and a "More tools" menu with two or more. */
+const BUDDY_TOOLS = [
+  { id: "triangle", name: "Triangle Buddy", url: "https://trianglebuddy.com/", blurb: "Sides, angles & missing values" },
+  { id: "fractions", name: "Fraction Buddy", url: "https://fractions.trianglebuddy.com/", blurb: "Add, subtract, multiply & divide fractions" },
+  { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Unit circle, exact values & graphs" },
+];
+function ToolNav({ tools, currentId }) {
+  const others = tools.filter((t) => t.id !== currentId);
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {                    // close on outside press or Esc
+    if (!open) return;
+    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+  if (others.length === 0) return null;
+  if (others.length === 1) {
+    const t = others[0];
+    return <a className="fb-nav-link" href={t.url} title={t.blurb}>{t.name} <span aria-hidden="true">{"\u2192"}</span></a>;
+  }
+  return (
+    <div className="fb-nav" ref={ref}>
+      <button type="button" className="fb-nav-link fb-nav-btn" aria-label="More tools" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <svg className="fb-nav-ico" width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true" focusable="false"><rect x="1" y="1" width="6.5" height="6.5" rx="1.5" /><rect x="10.5" y="1" width="6.5" height="6.5" rx="1.5" /><rect x="1" y="10.5" width="6.5" height="6.5" rx="1.5" /><rect x="10.5" y="10.5" width="6.5" height="6.5" rx="1.5" /></svg>
+        <span className="fb-nav-txt">Tools <span aria-hidden="true">{"\u25BE"}</span></span>
+      </button>
+      {open && (
+        <div className="fb-nav-menu" role="menu">
+          {tools.map((t) => t.id === currentId ? (
+            <span key={t.id} className="fb-nav-item is-current" role="menuitem" aria-current="page"><b>{t.name}</b><small>{t.blurb}</small></span>
+          ) : (
+            <a key={t.id} className="fb-nav-item" role="menuitem" href={t.url}><b>{t.name}</b><small>{t.blurb}</small></a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ===================== [SEC:COMPONENT] =====================
 function FractionCalculator() {
@@ -477,7 +537,16 @@ function FractionCalculator() {
         .fb-header{display:flex;align-items:baseline;gap:14px;margin-bottom:4px;flex-wrap:wrap;}
         .fb-title{font-family:${FONT_DISP};font-weight:600;margin:0;letter-spacing:-0.5px;font-size:30px;}
         .fb-subtitle{color:${C.dim};font-size:12px;letter-spacing:1px;}
-        .fb-version{margin-left:auto;color:${C.dim};font-size:11px;}
+        .fb-version{color:${C.dim};font-size:11px;}
+        .fb-head-end{margin-left:auto;display:flex;align-items:center;gap:12px;position:relative;} /* anchors .fb-nav-menu to the header edge */
+        .fb-nav-link{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 12px;border-radius:999px;border:1px solid ${C.line};background:${C.panel};color:${C.brass};font-family:${FONT_MONO};font-size:12px;text-decoration:none;cursor:pointer;white-space:nowrap;box-sizing:border-box;}
+        .fb-nav-link:hover,.fb-nav-link:focus-visible{border-color:${C.brass};outline:none;}
+        .fb-nav-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:10000;min-width:260px;padding:6px;border-radius:12px;background:${C.panel2};border:1px solid ${C.line};box-shadow:0 16px 36px -10px #000;}
+        .fb-nav-item{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:48px;padding:8px 12px;border-radius:8px;box-sizing:border-box;text-decoration:none;color:${C.ink};}
+        .fb-nav-item b{font-family:${FONT_DISP};font-weight:600;font-size:15px;}
+        .fb-nav-item small{font-family:${FONT_MONO};font-size:11px;color:${C.dim};}
+        a.fb-nav-item:hover,a.fb-nav-item:focus-visible{background:${C.bg};outline:none;}
+        .fb-nav-item.is-current b{color:${C.brass};}
         .fb-rule{height:1px;background:linear-gradient(90deg,${C.brass},transparent);margin-bottom:16px;opacity:0.5;}
         .fb-stack{display:flex;flex-direction:column;gap:14px;}
 
@@ -580,7 +649,13 @@ function FractionCalculator() {
           .fb-result-main{font-size:38px;}
           .fb-eq{font-size:28px;}
           .fb-hint{margin-left:0;text-align:left;}
+          .fb-nav-link{min-height:44px;font-size:13px;padding:4px 14px;}
         }
+        .fb-nav-ico{display:none}
+        @media (max-width:600px){ .fb-nav-btn{width:44px;min-height:44px;padding:0;justify-content:center} .fb-nav-txt{display:none} .fb-nav-ico{display:block} }
+        @media (max-width:600px){ .fb-header{align-items:center;} .fb-subtitle{order:3;width:100%;} }
+        .fb-version-foot{display:none}
+        @media (max-width:600px){ .fb-version{display:none} .fb-version-foot{display:block;margin:16px 0 0;text-align:center;color:${C.dim};font-size:11px;letter-spacing:0.5px} }
         /* Phones: a centered group leaves the delete button crowded on the
            right, so spread all four row items with equal spacing instead.
            (display:contents lets the cluster's children join the row.) */
@@ -600,7 +675,10 @@ function FractionCalculator() {
         <div className="fb-header">
           <h1 className="fb-title">Fraction<span style={{ color: C.brass }}>·</span>Buddy</h1>
           <span className="fb-subtitle">+ − × ÷ FRACTIONS · EXACT RESULTS</span>
-          <span className="fb-version">{APP_VERSION}</span>
+          <div className="fb-head-end">
+            <ToolNav tools={BUDDY_TOOLS} currentId="fractions" />
+            <span className="fb-version">{APP_VERSION}</span>
+          </div>
         </div>
         <div className="fb-rule" />
 
@@ -754,6 +832,7 @@ function FractionCalculator() {
           </span>
         </div>
 
+        <div className="fb-version-foot">Fraction Buddy {APP_VERSION}</div>
         <a className="fb-family" href={FAMILY_URL}>
           More free math &amp; geometry tools at <b>trianglebuddy.com</b>
         </a>

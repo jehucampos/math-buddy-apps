@@ -12,6 +12,11 @@ here in real Chromium with touch emulation (=> pointer: coarse):
   * the link-back strip is balanced between its two rules (no blank band)
   * term rows balanced: centered under the picker on wide screens, evenly
     spaced on phones (<=480px)
+  * header "More tools" menu (v1.3.0): button in the viewport, clear of the
+    title/subtitle/version, >= 44px on touch; icon-only 44x44 at <= 600px and
+    "Tools" text wider; on the title row from 320px up; at <= 600px the version
+    moves from the header to a line above the link-back strip; open menu fully on
+    screen and on top of the page (above the BMC welcome bubble and sticky result)
   * zero page errors
 Run: python3 core/layout-check.py   (exit 0 = pass, 2 = no browser: skipped)
 """
@@ -23,6 +28,8 @@ except ImportError:
 
 HTML = "file://" + os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "fraction-buddy.html"))
 exe = (glob.glob("/opt/pw-browsers/chromium-*/chrome-linux/chrome") or [None])[0]
+SHOTS = os.path.join(os.path.dirname(__file__), "..", ".browser-shots")
+os.makedirs(SHOTS, exist_ok=True)
 passed = failed = 0
 def ok(c, msg):
     global passed, failed
@@ -100,6 +107,50 @@ async def main():
                 ok(all(r["rowC"] <= 3 and r["pickC"] <= 3 for r in rows), f"{vp['width']}: group centered in row and under picker {rows}")
             else:
                 ok(all(max(r["gaps"]) - min(r["gaps"]) <= 2 and min(r["gaps"]) >= 4 for r in rows), f"{vp['width']}: equal spacing across the row {[r['gaps'] for r in rows]}")
+            await ctx.close()
+        # v1.3.0: header family menu, real layout
+        nav_js = """(()=>{const bx=e=>{const r=e.getBoundingClientRect();return {l:r.left,r:r.right,t:r.top,b:r.bottom,h:r.height}};
+          const hit=(a,c)=>a.l<c.r-0.5&&c.l<a.r-0.5&&a.t<c.b-0.5&&c.t<a.b-0.5;
+          const btn=bx(document.querySelector('.fb-nav-btn'));
+          const others=['.fb-title','.fb-subtitle','.fb-version'].filter(s=>hit(btn,bx(document.querySelector(s))));
+          const cs=s=>getComputedStyle(document.querySelector(s)).display!=='none';
+          return {btn, others, vw:innerWidth, head:bx(document.querySelector('.fb-header')).h, title:bx(document.querySelector('.fb-title')),
+            ico:cs('.fb-nav-ico'), txt:cs('.fb-nav-txt'), headVer:cs('.fb-version'), footVer:cs('.fb-version-foot'),
+            footOrder:(()=>{const f=document.querySelector('.fb-version-foot').getBoundingClientRect(),a=document.querySelector('.fb-footer').getBoundingClientRect(),l=document.querySelector('.fb-family').getBoundingClientRect();return f.top>=a.bottom-0.5&&f.bottom<=l.top+0.5})()}})()"""
+        menu_js = """(()=>{const m=document.querySelector('.fb-nav-menu');if(!m)return null;const r=m.getBoundingClientRect();
+          const top=[...m.querySelectorAll('.fb-nav-item')].map(e=>{const q=e.getBoundingClientRect();const x=document.elementFromPoint(q.left+q.width/2,q.top+q.height/2);return !!x&&e.contains(x)});
+          return {l:r.left,r:r.right,b:r.bottom,vw:innerWidth,vh:innerHeight,top}})()"""
+        for vp, mob in (({"width": 320, "height": 700}, True), ({"width": 360, "height": 740}, True), ({"width": 390, "height": 844}, True),
+                        ({"width": 844, "height": 390}, True), ({"width": 768, "height": 1024}, True), ({"width": 1024, "height": 800}, False)):
+            kw = dict(is_mobile=True, has_touch=True) if mob else {}
+            ctx, p, errs = await page_for(b, viewport=vp, **kw)
+            tag = f"{vp['width']}x{vp['height']} nav"
+            n = await p.evaluate(nav_js)
+            print(f"  INFO {tag}: header {round(n['head'])}px tall, button {round(n['btn']['l'])}-{round(n['btn']['r'])} of {n['vw']}")
+            ok(n["btn"]["l"] >= 0 and n["btn"]["r"] <= n["vw"] + 0.5, f"{tag}: button inside the viewport {n['btn']}")
+            ok(not n["others"], f"{tag}: button overlaps {n['others']}")
+            if mob: ok(n["btn"]["h"] >= 44, f"{tag}: touch target {n['btn']['h']}px (want >= 44)")
+            if n["vw"] <= 600:
+                bw = n["btn"]["r"] - n["btn"]["l"]
+                ok(n["ico"] and not n["txt"] and round(bw) == 44 and round(n["btn"]["h"]) == 44, f"{tag}: icon-only 44x44 button (ico {n['ico']} txt {n['txt']} {round(bw)}x{round(n['btn']['h'])})")
+            else:
+                ok(n["txt"] and not n["ico"], f"{tag}: 'Tools' label on wide screens (ico {n['ico']} txt {n['txt']})")
+            if n["vw"] <= 600:
+                ok(not n["headVer"] and n["footVer"] and n["footOrder"], f"{tag}: version line at the bottom of the app, above the link (head {n['headVer']} foot {n['footVer']} order {n['footOrder']})")
+            else:
+                ok(n["headVer"] and not n["footVer"], f"{tag}: version stays in the header (head {n['headVer']} foot {n['footVer']})")
+            if n["vw"] >= 320:
+                ok(n["btn"]["t"] < n["title"]["b"] and n["btn"]["b"] > n["title"]["t"], f"{tag}: button shares the title row (btn {n['btn']} title {n['title']})")
+            await (p.locator(".fb-nav-btn").tap() if mob else p.locator(".fb-nav-btn").click())
+            await p.wait_for_timeout(80)
+            m = await p.evaluate(menu_js)
+            ok(m and m["l"] >= 0 and m["r"] <= m["vw"] + 0.5 and m["b"] <= m["vh"] + 0.5, f"{tag}: menu fully on screen {m}")
+            ok(m and len(m["top"]) == 3 and all(m["top"]), f"{tag}: all 3 menu items visible on top {m and m['top']}")
+            await p.screenshot(path=os.path.join(SHOTS, f"nav-{vp['width']}x{vp['height']}.png"))
+            await (p.locator(".fb-title").tap() if mob else p.keyboard.press("Escape"))
+            await p.wait_for_timeout(80)
+            ok(await p.locator(".fb-nav-menu").count() == 0, f"{tag}: menu closes")
+            ok(not errs, f"{tag}: page errors {errs}")
             await ctx.close()
         # desktop
         ctx, p, errs = await page_for(b, viewport={"width": 1024, "height": 800})

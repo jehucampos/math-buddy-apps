@@ -5,9 +5,9 @@ self-contained HTML page on its own Cloudflare Worker (static assets).
 
 | App | Folder | Live | Version |
 |---|---|---|---|
-| Triangle Buddy | `apps/triangle` | trianglebuddy.com | v1.17.0 |
-| Trig Buddy | `apps/trig` | trig.trianglebuddy.com | v0.1.1 |
-| Fraction Buddy | `apps/fraction` | fractions.trianglebuddy.com | v1.2.4 |
+| Triangle Buddy | `apps/triangle` | trianglebuddy.com | v1.18.0 |
+| Trig Buddy | `apps/trig` | trig.trianglebuddy.com | v0.2.0 |
+| Fraction Buddy | `apps/fraction` | fractions.trianglebuddy.com | v1.3.0 |
 
 ## Layout
 

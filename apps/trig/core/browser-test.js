@@ -66,6 +66,44 @@ async function layoutChecks(page, tag) {
   ok(`${tag}: viewBox tracks the element size`, r.vbW === r.w && r.vbH === r.h, `vb ${r.vbW}x${r.vbH} el ${r.w}x${r.h}`);
   ok(`${tag}: canvas within the viewport width`, r.right <= r.vw + 0.5, `${r.right} > ${r.vw}`);
 }
+// header family menu in real layout: button inside the viewport, clear of the title /
+// DEG-RAD / version, 44 px tall on touch; open menu fully on screen and on top of the page.
+// <= 600 px: icon-only 44x44 button, on the title row from 360 px up (320 px needs two
+// rows, measured); the version shows as a line at the bottom of the app instead of the
+// header. Wider: "Tools" text and the header version.
+async function navChecks(page, tag, touch) {
+  const box = (sel) => page.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, h: r.height }; });
+  const hit = (a, b) => a.l < b.r - 0.5 && b.l < a.r - 0.5 && a.t < b.b - 0.5 && b.t < a.b - 0.5;
+  const vw = await page.evaluate(() => innerWidth), vh = await page.evaluate(() => innerHeight);
+  const btn = await box(".tg-nav-btn");
+  const others = { title: await box(".tg-title"), "DEG/RAD": await box(".tg-hdr-right .tg-seg"), version: await box(".tg-version") };
+  ok(`${tag}: More tools button inside the viewport`, btn.l >= 0 && btn.r <= vw + 0.5, JSON.stringify(btn));
+  const overl = Object.entries(others).filter(([, b]) => hit(btn, b)).map(([k]) => k);
+  ok(`${tag}: More tools button overlaps nothing in the header`, overl.length === 0, overl.join(","));
+  if (touch) ok(`${tag}: More tools button is a 44 px touch target`, btn.h >= 44, `${btn.h}`);
+  const mode = await page.evaluate(() => ({ ico: getComputedStyle(document.querySelector(".tg-nav-ico")).display !== "none", txt: getComputedStyle(document.querySelector(".tg-nav-txt")).display !== "none", w: document.querySelector(".tg-nav-btn").getBoundingClientRect().width }));
+  if (vw <= 600) {
+    ok(`${tag}: phone shows the icon-only 44x44 button`, mode.ico && !mode.txt && Math.round(mode.w) === 44 && Math.round(btn.h) === 44, JSON.stringify(mode));
+    const t = others.title;
+    if (vw >= 360) ok(`${tag}: button shares the title row`, btn.t < t.b && btn.b > t.t, `btn ${btn.t}-${btn.b} title ${t.t}-${t.b}`);
+  } else ok(`${tag}: wide screens show the "Tools" label`, mode.txt && !mode.ico, JSON.stringify(mode));
+  const ver = await page.evaluate(() => { const shown = (s) => getComputedStyle(document.querySelector(s)).display !== "none";
+    const f = document.querySelector(".tg-version-foot").getBoundingClientRect(), c = document.querySelector(".tg-cols").getBoundingClientRect(), hr = document.querySelector("footer#about hr").getBoundingClientRect();
+    return { head: shown(".tg-version"), foot: shown(".tg-version-foot"), belowApp: f.top >= c.bottom - 0.5, aboveInfo: f.bottom <= hr.top + 0.5 }; });
+  if (vw <= 600) ok(`${tag}: version moves to the bottom of the app, above the info section`, !ver.head && ver.foot && ver.belowApp && ver.aboveInfo, JSON.stringify(ver));
+  else ok(`${tag}: version stays in the header`, ver.head && !ver.foot, JSON.stringify(ver));
+  console.log(`INFO ${tag}: header ${Math.round((await box(".tg-header")).h)} px tall, button ${Math.round(btn.l)}–${Math.round(btn.r)} of ${vw}`);
+  await (touch ? page.tap(".tg-nav-btn") : page.click(".tg-nav-btn"));
+  await page.waitForTimeout(80);
+  const menu = await box(".tg-nav-menu").catch(() => null);
+  ok(`${tag}: menu opens fully on screen`, !!menu && menu.l >= 0 && menu.r <= vw + 0.5 && menu.b <= vh + 0.5, JSON.stringify(menu));
+  const onTop = await page.$$eval(".tg-nav-menu .tg-nav-item", (els) => els.map((e) => { const r = e.getBoundingClientRect(); const x = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!x && e.contains(x); }));
+  ok(`${tag}: all 3 menu items visible on top`, onTop.length === 3 && onTop.every(Boolean), JSON.stringify(onTop));
+  await page.screenshot({ path: path.join(SHOTS, `${tag.replace(/\s+/g, "-")}-nav.png`) });
+  await (touch ? page.tap(".tg-title") : page.keyboard.press("Escape"));
+  await page.waitForTimeout(80);
+  ok(`${tag}: menu closes (${touch ? "tap outside" : "Esc"})`, !(await page.$(".tg-nav-menu")));
+}
 async function eachMode(page, tag, fn) {
   for (const m of ["Angle", "Inverse", "Triangle", "Sinusoid"]) {
     await page.click(`.tg-mode:text-is("${m}")`);
@@ -86,6 +124,7 @@ async function eachMode(page, tag, fn) {
       await layoutChecks(page, `phone ${m}`);
       await page.screenshot({ path: path.join(SHOTS, `phone-${m}.png`) });
     });
+    await navChecks(page, "phone", true);
     // touch drag the point around the circle
     let g = await ring(page);
     await touchDrag(page, [onRing(g, 30), onRing(g, 70), onRing(g, 110), onRing(g, 134.2)]);
@@ -183,6 +222,7 @@ async function eachMode(page, tag, fn) {
       await layoutChecks(page, `${tag} ${m}`);
       await page.screenshot({ path: path.join(SHOTS, `${tag}-${m}.png`) });
     });
+    await navChecks(page, tag, true);
     ok(`${tag}: no runtime errors`, errors.length === 0, errors.join(" | "));
     await ctx.close();
   }
@@ -201,6 +241,7 @@ async function eachMode(page, tag, fn) {
       const clipped = await page.$$eval(".tg-controls .tg-section", (ss) => ss.filter((s) => s.scrollHeight > s.clientHeight + 1).length);
       ok(`desktop ${m}: no panel section is squashed`, clipped === 0, `${clipped} clipped`);
     });
+    await navChecks(page, "desktop", false);
     let g = await ring(page);
     await mouseDrag(page, [onRing(g, 30, 0.8), onRing(g, 180, 0.8), onRing(g, 225.4, 0.8)]);
     ok("desktop: mouse drag on the circle to 225°", (await status(page)) === "θ = 225° · Quadrant III", await status(page));

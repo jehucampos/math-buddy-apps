@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect, useLayoutEffect } from "react";
 
 /* ============================================================
-   TRIG BUDDY  v0.1.1
+   TRIG BUDDY  v0.2.0
    ------------------------------------------------------------
    NAVIGATION MAP (search these tags to jump to a section):
      [SEC:CORE]      pure logic. Tested straight from this file by
@@ -9,6 +9,7 @@ import React, { useState, useRef, useMemo, useEffect, useLayoutEffect } from "re
                      keep in sync). Spans num→parse→angle→exact→
                      trig→inverse→triangle→sinusoid→plot→edit.
      [SEC:UI-CONST]  UI-only constants (colors, fonts, labels).
+     [SEC:UI-CONST/hub] BUDDY_TOOLS + ToolNav: family navigation.
      [SEC:COMPONENT] the React component (state, gestures, editor,
                      canvas render, panels). All churn happens here.
      [SEC:PRESENT]   small presentational helpers (Section, Row,
@@ -35,6 +36,19 @@ import React, { useState, useRef, useMemo, useEffect, useLayoutEffect } from "re
            inside @media (hover:hover).
          * circle ring labels skip spots crossed by the Inverse guide
            line (e.g. 60°/120° under the sin θ = 1 line).
+   v0.2.0 family navigation: BUDDY_TOOLS + ToolNav ([SEC:UI-CONST/hub]),
+         copied from Triangle Buddy. The header shows a "More tools"
+         menu (Triangle, Fraction, Trig; this tool marked current)
+         between DEG/RAD and the version. The Settings-panel family
+         line stays. Menu z-index 10000: above the Buy Me a Coffee
+         welcome bubble (9999), below the editor sheet and popover.
+         The menu anchors to .tg-hdr-right (the header's right edge)
+         so it stays on screen at 320 px. Button (aria-label "More
+         tools") reads "Tools ▾"; at <= 600 px it is a 44x44 icon.
+         Phones (<= 600 px): the version moves from the header to a
+         line at the bottom of the app ("Trig Buddy v0.2.0", just above
+         the info/FAQ section), so title, DEG/RAD and the icon share
+         one row from 360 px up (header 62 px).
    ============================================================ */
 
 // ===================== [SEC:CORE] =====================
@@ -459,7 +473,7 @@ const TG = {
 };
 const FONT_MONO = "'JetBrains Mono', ui-monospace, monospace";
 const FONT_DISP = "'Fraunces', Georgia, serif";
-const VERSION = "v0.1.1";
+const VERSION = "v0.2.0";
 const FN_COLOR = { sin: C.brass, cos: C.cyan, tan: TG.violet, csc: C.brass, sec: C.cyan, cot: TG.violet };
 const RECIP = { csc: true, sec: true, cot: true };
 const MODES = [["angle", "Angle"], ["inverse", "Inverse"], ["triangle", "Triangle"], ["sinusoid", "Sinusoid"]];
@@ -477,6 +491,51 @@ const TRI0 = { order: ["theta", "hyp"], opp: null, adj: null, hyp: 10 };
 const SW0 = { f: "sin", A: 2, B: 2, C: 30, D: 1 };
 const INV0 = { v: 0.5, src: "1/2" };
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+/* ===================== [SEC:UI-CONST/hub] Buddy tool family =====================
+   Copied from Triangle Buddy (COMPONENT-CATALOG "BUDDY_TOOLS + ToolNav"); only the
+   class prefix differs. Keep the list identical in all three apps. ToolNav renders a
+   direct link with one sibling tool and a "More tools" menu with two or more. */
+const BUDDY_TOOLS = [
+  { id: "triangle", name: "Triangle Buddy", url: "https://trianglebuddy.com/", blurb: "Sides, angles & missing values" },
+  { id: "fractions", name: "Fraction Buddy", url: "https://fractions.trianglebuddy.com/", blurb: "Add, subtract, multiply & divide fractions" },
+  { id: "trig", name: "Trig Buddy", url: "https://trig.trianglebuddy.com/", blurb: "Unit circle, exact values & graphs" },
+];
+function ToolNav({ tools, currentId }) {
+  const others = tools.filter((t) => t.id !== currentId);
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {                    // close on outside press or Esc
+    if (!open) return;
+    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+  if (others.length === 0) return null;
+  if (others.length === 1) {
+    const t = others[0];
+    return <a className="tg-nav-link" href={t.url} title={t.blurb}>{t.name} <span aria-hidden="true">{"\u2192"}</span></a>;
+  }
+  return (
+    <div className="tg-nav" ref={ref}>
+      <button type="button" className="tg-nav-link tg-nav-btn" aria-label="More tools" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <svg className="tg-nav-ico" width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true" focusable="false"><rect x="1" y="1" width="6.5" height="6.5" rx="1.5" /><rect x="10.5" y="1" width="6.5" height="6.5" rx="1.5" /><rect x="1" y="10.5" width="6.5" height="6.5" rx="1.5" /><rect x="10.5" y="10.5" width="6.5" height="6.5" rx="1.5" /></svg>
+        <span className="tg-nav-txt">Tools <span aria-hidden="true">{"\u25BE"}</span></span>
+      </button>
+      {open && (
+        <div className="tg-nav-menu" role="menu">
+          {tools.map((t) => t.id === currentId ? (
+            <span key={t.id} className="tg-nav-item is-current" role="menuitem" aria-current="page"><b>{t.name}</b><small>{t.blurb}</small></span>
+          ) : (
+            <a key={t.id} className="tg-nav-item" role="menuitem" href={t.url}><b>{t.name}</b><small>{t.blurb}</small></a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ===================== [SEC:COMPONENT] =====================
 // Optional props exist for the smoke-render / test gates; the deployed page
@@ -1442,8 +1501,16 @@ export default function TrigCalculator({
         .tg-header{display:flex;align-items:baseline;gap:6px 14px;margin-bottom:4px;flex-wrap:wrap;}
         .tg-title{font-family:${FONT_DISP};font-weight:600;margin:0;letter-spacing:-0.5px;}
         .tg-subtitle{color:${C.dim};font-size:12px;letter-spacing:1px;}
-        .tg-hdr-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+        .tg-hdr-right{margin-left:auto;display:flex;align-items:center;gap:12px;position:relative;} /* anchors .tg-nav-menu to the header edge */
         .tg-version{color:${C.dim};font-size:11px;}
+        .tg-nav-link{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:4px 12px;border-radius:999px;border:1px solid ${C.line};background:${C.panel};color:${C.brass};font-family:${FONT_MONO};font-size:12px;text-decoration:none;cursor:pointer;white-space:nowrap;box-sizing:border-box}
+        .tg-nav-link:focus-visible{border-color:${C.brass};outline:none}
+        .tg-nav-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:10000;min-width:260px;padding:6px;border-radius:12px;background:${C.panel2};border:1px solid ${C.line};box-shadow:0 16px 36px -10px #000}
+        .tg-nav-item{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:48px;padding:8px 12px;border-radius:8px;box-sizing:border-box;text-decoration:none;color:${C.ink}}
+        .tg-nav-item b{font-family:${FONT_DISP};font-weight:600;font-size:15px}
+        .tg-nav-item small{font-family:${FONT_MONO};font-size:11px;color:${C.dim}}
+        a.tg-nav-item:focus-visible{background:${C.bg};outline:none}
+        .tg-nav-item.is-current b{color:${C.brass}}
         .tg-rule{height:1px;background:linear-gradient(90deg,${C.brass},transparent);margin:6px 0 12px;opacity:0.5;}
         .tg-modes{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
         .tg-mode{padding:7px 16px;border-radius:8px;font-size:12.5px;background:${C.bg};color:${C.dim};border:1px solid ${C.line};font-family:${FONT_MONO};cursor:pointer;}
@@ -1462,7 +1529,7 @@ export default function TrigCalculator({
         .tg-hint{margin-top:8px;font-size:10.5px;color:${C.faint};line-height:1.6;}
         .tg-legend{font-size:11px;color:${C.faint};display:flex;gap:12px;align-items:center;}
         .tg-btn{cursor:pointer;transition:border-color .15s ease,color .15s ease;user-select:none;-webkit-user-select:none;}
-        @media (hover:hover){.tg-btn:hover{border-color:${C.brass}!important;}.tg-family a:hover{text-decoration:underline;}}
+        @media (hover:hover){.tg-btn:hover{border-color:${C.brass}!important;}.tg-family a:hover{text-decoration:underline;}.tg-nav-link:hover{border-color:${C.brass};}a.tg-nav-item:hover{background:${C.bg};}}
         .tg-flat{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;font-size:12px;background:${C.bg};color:${C.dim};border:1px solid ${C.line};font-family:${FONT_MONO};}
         .tg-flat.is-on{background:${C.brass};color:${C.bg};border-color:${C.brass};font-weight:600;}
         .tg-chip{background:${C.bg};color:${C.dim};border:1px solid ${C.line};border-radius:5px;font-size:11px;padding:4px 8px;font-family:${FONT_MONO};}
@@ -1577,7 +1644,12 @@ export default function TrigCalculator({
           .tg-flat{padding:8px 12px;}
           .tg-field{padding:9px 12px;}
           .tg-seg-btn{padding:8px 12px;}
+          .tg-nav-link{min-height:44px;font-size:13px;padding:4px 14px;}
         }
+        .tg-nav-ico{display:none}
+        @media (max-width:600px){ .tg-nav-btn{width:44px;min-height:44px;padding:0;justify-content:center} .tg-nav-txt{display:none} .tg-nav-ico{display:block} }
+        .tg-version-foot{display:none}
+        @media (max-width:600px){ .tg-version{display:none} .tg-version-foot{display:block;margin:16px 0 0;text-align:center;color:${C.dim};font-size:11px;letter-spacing:0.5px} }
         ::selection{background:${C.brass};color:${C.bg}}`}</style>
 
       <div className="tg-app" style={{ minHeight: fitMode ? 0 : "calc(100vh - 40px)" }}>
@@ -1590,6 +1662,7 @@ export default function TrigCalculator({
                 <button key={u} className={`tg-btn tg-seg-btn${unit === u ? " is-on" : ""}`} onClick={() => setUnit(u)} aria-pressed={unit === u}>{l}</button>
               ))}
             </div>
+            <ToolNav tools={BUDDY_TOOLS} currentId="trig" />
             <span className="tg-version">{VERSION}</span>
           </div>
         </div>
@@ -1654,6 +1727,7 @@ export default function TrigCalculator({
             {settingsPanel}
           </div>
         </div>
+        <div className="tg-version-foot">Trig Buddy {VERSION}</div>
       </div>
       {editor}
     </div>

@@ -270,6 +270,22 @@ const pick = (rowIdx, label) => {       // rowIdx = 1-based picker index (betwee
   ok("Add term focuses the new row's first box", document.activeElement === after[6]);
   ok("after adding, previous last box becomes 'next'", after[5].getAttribute("enterkeyhint") === "next");
 
+  // ---- 16. header family menu (v1.3.0) ----
+  const btn = $(".fb-head-end .fb-nav-btn")[0];
+  ok("header: closed More tools button", !!btn && btn.getAttribute("aria-expanded") === "false" && $(".fb-nav-menu").length === 0);
+  click(btn);
+  const items = $(".fb-nav-menu .fb-nav-item");
+  ok("header menu: Triangle, Fraction, Trig in order", items.length === 3 && ["Triangle Buddy", "Fraction Buddy", "Trig Buddy"].every((n, i) => items[i].textContent.startsWith(n)));
+  ok("header menu: Fraction is current and not a link", items[1] && items[1].tagName === "SPAN" && items[1].getAttribute("aria-current") === "page");
+  ok("header menu: sibling hrefs", items[0] && items[0].href === "https://trianglebuddy.com/" && items[2] && items[2].href === "https://trig.trianglebuddy.com/");
+  act(() => { items[0].dispatchEvent(new window.MouseEvent("pointerdown", { bubbles: true })); });
+  ok("header menu: press inside keeps it open", $(".fb-nav-menu").length === 1);
+  act(() => { document.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+  ok("header menu: Esc closes", $(".fb-nav-menu").length === 0 && btn.getAttribute("aria-expanded") === "false");
+  click(btn);
+  act(() => { document.body.dispatchEvent(new window.MouseEvent("pointerdown", { bubbles: true })); });
+  ok("header menu: outside press closes", $(".fb-nav-menu").length === 0);
+
   try { fs.unlinkSync(TMP); } catch {}
   console.log(`\n[interaction-test] ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

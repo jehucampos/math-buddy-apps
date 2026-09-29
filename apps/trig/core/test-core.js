@@ -13,7 +13,7 @@ const names = ["fmtNum", "mod", "clean", "evalExpr", "parseAngle", "parseValue",
   "formatAngle", "formatDMS", "exactTrig", "exactNum", "formatExact", "exactIsSimple", "trigAt", "trigAll", "positiveFns",
   "inverseSolve", "triPush", "solveRight", "sinusoidInfo", "sinusoidY", "phasorStart", "sinusoidEq", "waveWindow",
   "xTicks", "yTicks", "asymptotes", "sampleCurve", "layoutCanvas", "keypadApply", "EDIT_ORDER", "nextTarget",
-  "readTarget", "FNS", "KEYPAD", "DEG"];
+  "readTarget", "FNS", "KEYPAD", "DEG", "ToolNav", "BUDDY_TOOLS"];
 fs.writeFileSync(path.join(TMP, "w.jsx"), src + `\nmodule.exports = { ${names.join(", ")} };\n`);
 execFileSync(path.join(ROOT, "node_modules/.bin/esbuild"), [path.join(TMP, "w.jsx"), "--bundle", "--format=cjs",
   "--platform=node", "--jsx=automatic", "--external:react", "--external:react/jsx-runtime",
@@ -288,6 +288,46 @@ ok("read B 0 rejected", !!L.readTarget("B", "0", "deg", "sinusoid").err);
 ok("read C π/4 → 45", L.readTarget("C", "π/4", "rad", "sinusoid").value === 45);
 ok("read inv √3/2", close(L.readTarget("inv", "√3/2", "deg", "inverse").value, Math.sqrt(3) / 2));
 
-fs.rmSync(TMP, { recursive: true, force: true });
-console.log(`CORE TESTS: ${pass} passed, ${fail} failed`);
-process.exit(fail ? 1 : 0);
+// ---- family navigation: same list as Triangle/Fraction; ToolNav none / link / menu ----
+{
+  const T = L.BUDDY_TOOLS, ids = T.map((t) => t.id);
+  ok("BUDDY_TOOLS = triangle, fractions, trig", ids.join() === "triangle,fractions,trig", ids.join());
+  ok("BUDDY_TOOLS urls", T.map((t) => t.url).join() === "https://trianglebuddy.com/,https://fractions.trianglebuddy.com/,https://trig.trianglebuddy.com/");
+}
+(async () => {
+  const { JSDOM } = require("jsdom");
+  const dom = new JSDOM("<!doctype html><div id=r></div>", { pretendToBeVisual: true });
+  global.window = dom.window; global.document = dom.window.document;
+  const React = require("react"), { createRoot } = require("react-dom/client");
+  const tick = () => new Promise((r) => setTimeout(r, 20));
+  const doc = dom.window.document, root = createRoot(doc.getElementById("r"));
+  const mount = async (tools) => { root.render(React.createElement(L.ToolNav, { tools, currentId: "trig" })); await tick(); };
+  const down = (el) => el.dispatchEvent(new dom.window.MouseEvent("pointerdown", { bubbles: true }));
+  const trig = L.BUDDY_TOOLS.find((t) => t.id === "trig"), tri = L.BUDDY_TOOLS.find((t) => t.id === "triangle");
+
+  await mount([trig]);
+  ok("ToolNav: no siblings renders nothing", doc.getElementById("r").innerHTML === "");
+  await mount([tri, trig]);
+  const a = doc.querySelector("a.tg-nav-link");
+  ok("ToolNav: one sibling = direct link", !!a && a.href === "https://trianglebuddy.com/" && !doc.querySelector(".tg-nav-btn"));
+  await mount(L.BUDDY_TOOLS);
+  const btn = doc.querySelector(".tg-nav-btn");
+  ok("ToolNav: two+ siblings = closed menu button", !!btn && !doc.querySelector(".tg-nav-menu") && btn.getAttribute("aria-expanded") === "false");
+  btn.click(); await tick();
+  const items = [...doc.querySelectorAll(".tg-nav-item")];
+  ok("ToolNav: menu lists all 3 tools", items.length === 3, `got ${items.length}`);
+  ok("ToolNav: current tool (Trig) marked, not a link", items[2].tagName === "SPAN" && items[2].getAttribute("aria-current") === "page" && items[2].textContent.includes("Trig Buddy"));
+  ok("ToolNav: siblings are links with right hrefs", items[0].href === "https://trianglebuddy.com/" && items[1].href === "https://fractions.trianglebuddy.com/");
+  down(items[0]); await tick();
+  ok("ToolNav: press inside menu keeps it open", !!doc.querySelector(".tg-nav-menu"));
+  doc.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); await tick();
+  ok("ToolNav: Esc closes", !doc.querySelector(".tg-nav-menu"));
+  doc.querySelector(".tg-nav-btn").click(); await tick();
+  down(doc.body); await tick();
+  ok("ToolNav: outside press closes", !doc.querySelector(".tg-nav-menu"));
+  root.unmount();
+
+  fs.rmSync(TMP, { recursive: true, force: true });
+  console.log(`CORE TESTS: ${pass} passed, ${fail} failed`);
+  process.exit(fail ? 1 : 0);
+})().catch((e) => { console.log("HARNESS ERROR", e.stack); process.exit(2); });

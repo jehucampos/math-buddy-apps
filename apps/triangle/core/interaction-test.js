@@ -47,13 +47,31 @@ async function boot(phone) {
   return { win, doc, errors, fire, tap, $, all, key, click, status, label };
 }
 
+// Header ToolNav with 3 tools: closed "More tools" button; opening it lists all three,
+// current tool (Triangle) marked and not a link, siblings link to their subdomains.
+async function checkNav(A, tag) {
+  const btn = A.$(".tc-head-end button.tc-nav-btn");
+  ok(`${tag}: header has closed More tools menu`, !!btn && btn.getAttribute("aria-label") === "More tools" && btn.textContent.includes("Tools") && !!btn.querySelector("svg.tc-nav-ico") && btn.getAttribute("aria-expanded") === "false" && !A.$(".tc-nav-menu"), btn && btn.outerHTML);
+  if (!btn) return;
+  btn.click(); await tick();
+  const items = A.all(".tc-nav-menu .tc-nav-item");
+  ok(`${tag}: menu lists Triangle (current), Fraction, Trig`,
+    items.length === 3 && items[0].tagName === "SPAN" && items[0].getAttribute("aria-current") === "page" && items[0].textContent.includes("Triangle Buddy")
+    && items[1].href === "https://fractions.trianglebuddy.com/" && items[1].textContent.includes("Fraction Buddy")
+    && items[2].href === "https://trig.trianglebuddy.com/" && items[2].textContent.includes("Trig Buddy"),
+    items.map((i) => i.outerHTML).join(" | "));
+  A.doc.dispatchEvent(new A.win.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); await tick();
+  ok(`${tag}: Esc closes the menu`, !A.$(".tc-nav-menu") && btn.getAttribute("aria-expanded") === "false");
+}
+
 (async () => {
   // =================== PHONE ===================
   const P = await boot(true);
   ok("phone: renders 6 value targets + 3 vertices", P.all("[data-ed]").length === 9, `got ${P.all("[data-ed]").length}`);
   ok("phone: idle status", P.status() === "Tap a value to set it", P.status());
-  { const n = P.$(".tc-head-end a.tc-nav-link"); ok("phone: header links to Fraction Buddy", !!n && n.href === "https://fractions.trianglebuddy.com/" && n.textContent.includes("Fraction Buddy"), n && n.outerHTML); }
-  ok("phone: version label v1.17.0", (P.$(".tc-version") || {}).textContent === "v1.17.0");
+  await checkNav(P, "phone");
+  ok("phone: version label v1.18.0", (P.$(".tc-version") || {}).textContent === "v1.18.0");
+  ok("phone: bottom version line", (P.$(".tc-app > .tc-version-foot") || {}).textContent === "Triangle Buddy v1.18.0");
   ok("phone: detail panels collapsed", !!P.$(".tc-details") && !P.all(".tc-section-title").some((e) => e.textContent === "Sides"));
   await P.click(".tc-details");
   ok("phone: Details expands Sides panel", P.all(".tc-section-title").some((e) => e.textContent === "Sides"));
@@ -111,8 +129,9 @@ async function boot(phone) {
 
   // =================== DESKTOP ===================
   const D = await boot(false);
-  { const n = D.$(".tc-head-end a.tc-nav-link"); ok("desktop: header links to Fraction Buddy", !!n && n.href === "https://fractions.trianglebuddy.com/" && n.textContent.includes("Fraction Buddy"), n && n.outerHTML); }
-  ok("desktop: version label v1.17.0", (D.$(".tc-version") || {}).textContent === "v1.17.0");
+  await checkNav(D, "desktop");
+  ok("desktop: version label v1.18.0", (D.$(".tc-version") || {}).textContent === "v1.18.0");
+  ok("desktop: bottom version line present (CSS shows it on phones only)", (D.$(".tc-app > .tc-version-foot") || {}).textContent === "Triangle Buddy v1.18.0");
   await D.tap(D.$('[data-ed="edge-a"]'));
   ok("desktop: popover with native input, no sheet", !!D.$(".tc-pop input.tc-ed-in") && !D.$(".tc-sheet"));
   const setVal = (el, v) => { Object.getOwnPropertyDescriptor(D.win.HTMLInputElement.prototype, "value").set.call(el, v); el.dispatchEvent(new D.win.Event("input", { bubbles: true })); };
