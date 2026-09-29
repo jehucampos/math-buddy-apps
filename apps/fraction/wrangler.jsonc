@@ -1,0 +1,9 @@
+{
+  // "name" MUST equal the existing Worker's name in the Cloudflare dashboard,
+  // otherwise a deploy creates a new Worker. The build refuses to deploy while it is "floral-salad-b163".
+  "name": "floral-salad-b163",
+  "compatibility_date": "2026-09-28",
+  "assets": {
+    "directory": "./dist"
+  }
+}

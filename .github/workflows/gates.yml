@@ -1,0 +1,42 @@
+name: gates
+# Runs every gate for every app on each push and pull request.
+# Deploys are done by Cloudflare Workers Builds, not by this workflow.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [triangle, fraction, trig]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install app dependencies
+        working-directory: apps/${{ matrix.app }}
+        run: npm ci
+      - name: Install Chromium for the browser gate
+        if: matrix.app == 'trig'
+        working-directory: apps/trig
+        run: |
+          npx playwright-core install --with-deps chromium
+          EXE=$(find "$HOME/.cache/ms-playwright" -type f -name chrome -path '*/chromium-*' | head -1)
+          test -x "$EXE" || { echo "Chromium not found"; exit 1; }
+          echo "CHROMIUM=$EXE" >> "$GITHUB_ENV"
+      - name: Install Chromium for the layout gate (Python Playwright)
+        if: matrix.app == 'fraction'
+        run: |
+          pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Build + all gates + stage
+        run: node scripts/buddy.js ${{ matrix.app }} --full
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.app }}
+          path: apps/${{ matrix.app }}/dist

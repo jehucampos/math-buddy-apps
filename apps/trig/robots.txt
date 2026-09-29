@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://trig.trianglebuddy.com/sitemap.xml

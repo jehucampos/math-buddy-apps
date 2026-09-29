@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Triangle Buddy — Free Interactive Triangle Calculator (Sides, Angles, Inches & Metric)</title>
+<meta name="description" content="Free visual triangle calculator. Drag points to solve sides and angles in real time, lock values, snap to grid, and read results in fractional inches (to 1/64") or metric. Works on mobile and desktop.">
+<meta name="keywords" content="triangle calculator, right triangle calculator, triangle side calculator, triangle angle calculator, find missing side of triangle, law of cosines calculator, interactive triangle, geometry calculator, trigonometry calculator, triangle solver, fractional inch calculator, carpentry triangle calculator">
+<meta name="author" content="Jehu Campos">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://trianglebuddy.com/">
+<meta name="theme-color" content="#0b0e13">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Triangle Buddy">
+<meta property="og:title" content="Triangle Buddy — Free Interactive Triangle Calculator (Sides, Angles, Inches & Metric)">
+<meta property="og:description" content="Free visual triangle calculator. Drag points to solve sides and angles in real time, lock values, snap to grid, and read results in fractional inches (to 1/64") or metric. Works on mobile and desktop.">
+<meta property="og:url" content="https://trianglebuddy.com/">
+<meta property="og:image" content="https://trianglebuddy.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Triangle Buddy — Free Interactive Triangle Calculator (Sides, Angles, Inches & Metric)">
+<meta name="twitter:description" content="Free visual triangle calculator. Drag points to solve sides and angles in real time, lock values, snap to grid, and read results in fractional inches (to 1/64") or metric. Works on mobile and desktop.">
+<meta name="twitter:image" content="https://trianglebuddy.com/og-image.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Triangle Buddy","url":"https://trianglebuddy.com/","applicationCategory":"EducationalApplication","operatingSystem":"Any (web browser)","browserRequirements":"Requires JavaScript","description":"Free visual triangle calculator. Drag points to solve sides and angles in real time, lock values, snap to grid, and read results in fractional inches (to 1/64\") or metric. Works on mobile and desktop.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Interactive draggable triangle","Solves missing sides and angles","Imperial fractional inches to 1/64","Metric mm/cm/m","Grid and axis snapping","Pinch zoom and pan on touch"]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I find a missing side of a triangle?","acceptedAnswer":{"@type":"Answer","text":"Drag the triangle points to match what you know, lock the known sides or angles by typing them in, and Triangle Buddy solves the remaining side automatically in your chosen units."}},{"@type":"Question","name":"Does it give measurements in inches and fractions?","acceptedAnswer":{"@type":"Answer","text":"Yes. Imperial mode shows each length as a fraction of an inch with precision from 1/2 down to 1/64, plus feet and yards. Metric mode shows millimeters, centimeters, or meters to four decimals."}},{"@type":"Question","name":"Is Triangle Buddy free?","acceptedAnswer":{"@type":"Answer","text":"Yes, it is completely free with no ads and runs entirely in your browser."}},{"@type":"Question","name":"Does it work on phones and tablets?","acceptedAnswer":{"@type":"Answer","text":"Yes. Drag points with one finger, pinch to zoom, and pan with two fingers on touch devices, or use a mouse on desktop."}}]}]}</script>
+<style>
+  html,body{margin:0;padding:0;background:#0b0e13;-webkit-text-size-adjust:100%;}
+  body{min-height:100%;}
+  #root{min-height:100vh;}
+  *{ -webkit-tap-highlight-color: transparent; }
+  svg{ touch-action: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<!-- ============ CRAWLABLE CONTENT (visible, below the tool) ============ -->
+<footer id="about" style="max-width:880px;margin:0 auto;padding:32px 22px 96px;color:#aab4c5;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px;line-height:1.7;">
+  <hr style="border:none;border-top:1px solid #2a3344;margin:0 0 28px;">
+
+  <h2 style="font-family:Fraunces,Georgia,serif;color:#f0ece2;font-size:24px;font-weight:600;margin:0 0 12px;">Free Interactive Triangle Calculator</h2>
+  <p style="margin:0 0 16px;"><strong style="color:#f0ece2;">Triangle Buddy</strong> is a free, visual triangle calculator that solves for missing sides, angles, and dimensions in real time. Drag any vertex to reshape the triangle and watch every side length and interior angle update instantly. Lock a side or angle to a fixed value, snap points to a grid or axis, and read results in both imperial (fractional inches down to 1/64") and metric (millimeters, centimeters, meters) units. No sign-up, no ads, works on desktop and mobile.</p>
+
+  <h3 style="font-family:Fraunces,Georgia,serif;color:#f0ece2;font-size:18px;font-weight:600;margin:24px 0 8px;">What you can calculate</h3>
+  <ul style="margin:0 0 16px;padding-left:20px;">
+    <li>Find a missing side of a triangle when you know other sides and angles.</li>
+    <li>Find a missing angle from known side lengths (law of cosines, solved automatically).</li>
+    <li>Solve right triangles, scalene, isosceles, and equilateral triangles.</li>
+    <li>Check whether three lengths can form a valid triangle (triangle inequality).</li>
+    <li>Convert triangle measurements between metric and imperial fractional-inch units.</li>
+    <li>Lay out a triangle to exact dimensions and read off every side and angle.</li>
+  </ul>
+
+  <h3 style="font-family:Fraunces,Georgia,serif;color:#f0ece2;font-size:18px;font-weight:600;margin:24px 0 8px;">Who it's for</h3>
+  <p style="margin:0 0 16px;">Students learning trigonometry and geometry, woodworkers and carpenters cutting angled joints, framers and roofers figuring rafter and rise/run angles, machinists and metalworkers, drafters and CAD users sketching layouts, quilters and crafters, tile setters, landscapers, and anyone who needs to solve a triangle quickly without installing software.</p>
+
+  <h3 style="font-family:Fraunces,Georgia,serif;color:#f0ece2;font-size:18px;font-weight:600;margin:24px 0 8px;">Frequently asked questions</h3>
+
+  <p style="margin:0 0 6px;"><strong style="color:#f0ece2;">How do I find a missing side of a triangle?</strong></p>
+  <p style="margin:0 0 16px;">Drag the triangle's points until you know the values you have, then lock the known sides or angles by typing them in. Triangle Buddy solves the remaining side automatically and shows it in your chosen units.</p>
+
+  <p style="margin:0 0 6px;"><strong style="color:#f0ece2;">Does it give measurements in inches and fractions?</strong></p>
+  <p style="margin:0 0 16px;">Yes. Switch to imperial and every length is shown as a fraction of an inch, with selectable precision from 1/2 down to 1/64 of an inch, plus feet and yards. Metric mode shows millimeters, centimeters, or meters to up to four decimal places.</p>
+
+  <p style="margin:0 0 6px;"><strong style="color:#f0ece2;">Is Triangle Buddy free?</strong></p>
+  <p style="margin:0 0 16px;">Yes, it's completely free and there are no ads. It runs entirely in your browser.</p>
+
+  <p style="margin:0 0 6px;"><strong style="color:#f0ece2;">Does it work on phones and tablets?</strong></p>
+  <p style="margin:0 0 16px;">Yes. You can drag points with one finger, pinch to zoom, and pan with two fingers on touch devices, as well as use a mouse on desktop.</p>
+
+  <p style="margin:24px 0 0;color:#7f8a9d;font-size:12px;">Triangle Buddy &middot; a free interactive triangle calculator.</p>
+  <p style="margin-top:28px;">Part of a free family of math and geometry tools — try <a href="https://fractions.trianglebuddy.com/" style="color:#e0b46a;">Fraction Buddy</a>, an exact fraction calculator that adds, subtracts, multiplies and divides fractions and mixed numbers.</p>
+</footer>
+
+<script>{{BUNDLE}}</script>
+<script data-name="BMC-Widget" data-cfasync="false" src="./widget.js" data-id="jehucampos" data-description="Support me on Buy me a coffee!" data-message="Thank you for visiting! I hope you find this tool useful! Please enjoy an ad-free page, and any support you're able to send is greatly appreciated!" data-color="#5F7FFF" data-position="Right" data-x_margin="18" data-y_margin="18"></script>
+</body>
+</html>

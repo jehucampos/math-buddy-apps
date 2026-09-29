@@ -1,0 +1,11 @@
+{
+  "name": "buddy-apps",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Monorepo for the Buddy family of math tools (trianglebuddy.com).",
+  "scripts": {
+    "triangle": "node scripts/buddy.js triangle",
+    "trig": "node scripts/buddy.js trig --full",
+    "fraction": "node scripts/buddy.js fraction --full"
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.wrangler/
+# build outputs (CI rebuilds them)
+apps/*/index.html
+apps/*/*-buddy.html
+apps/*/standalone_entry.jsx
+# synced from packages/ by scripts/buddy.js
+apps/*/widget.js
+# gate scratch
+.build-bundle.js
+.smoke-bundle.cjs
+.test-core/
+.browser-shots/
+.DS_Store
